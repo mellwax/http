@@ -1,0 +1,1419 @@
+191.002 VU Betriebssysteme
+EXERCISE 3
+Testcases
+
+This file is for information only and non-binding! For authoritative information about official testcases always see most up to date version of PDF file in TUWEL!
+
+Last update 2023-12-05
+
+
+
+
+
+############################# 1
+A-Testcase 01: usage
+
+-----------------------------
+./client
+<usage message>
+echo $?
+1
+-----------------------------
+
+
+############################# 1
+A-Testcase 02: invalid-port-1
+
+-----------------------------
+./client -p abc > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+############################# 1
+A-Testcase 03: invalid-port-2
+
+-----------------------------
+./client -p 80x http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+############################# 1
+A-Testcase 04: invalid-options-1
+
+-----------------------------
+./client -p 80 -p 81 http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+############################# 1
+A-Testcase 05: invalid-options-2
+
+-----------------------------
+./client -a http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+############################# 1
+A-Testcase 06: simple-1
+
+-----------------------------
+mkdir -p docroot
+echo "Hello world." > docroot/hello.html
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /hello.html
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+./client -p 9999 http://localhost/hello.html
+Hello world.
+echo $?
+0
+-----------------------------
+
+
+#############################
+A-Testcase 07: save-to-file-1
+
+-----------------------------
+
+
+mkdir -p docroot
+echo "Index." > docroot/index.html
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+mkdir -p test1
+rm -rf test1/*
+
+
+
+
+
+
+
+./client -p 9999 -d test1 http://localhost/
+echo $?
+0
+cat test1/index.html
+Index.
+-----------------------------
+
+
+#############################
+A-Testcase 08: save-to-file-2
+
+-----------------------------
+
+mkdir -p docroot
+echo "This is the content." > docroot/t
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /t
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+rm -rf f.2
+
+
+
+
+
+
+
+./client -p 9999 -o f.2 http://localhost/t
+echo $?
+0
+cat f.2
+This is the content.
+-----------------------------
+
+
+#############################
+A-Testcase 09: cannot-write-1
+
+-----------------------------
+
+
+mkdir -p docroot
+echo "This is the content." > docroot/t
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /t
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+touch f.3
+chmod 000 f.3
+
+
+
+
+
+
+
+./client -p 9999 -o f.3 http://localhost/t > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 10: cannot-write-2
+
+-----------------------------
+
+mkdir -p docroot
+echo "This is the content." > docroot/t
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /t
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+rm -rf test.dir
+
+
+
+
+
+
+
+./client -p 9999 -d test.dir http://localhost/t > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 11: save-to-file-3
+
+-----------------------------
+
+
+mkdir -p docroot
+echo "<?php echo 2*\$_GET[\"a\"] . \"\n\"; ?>" > docroot/m.php
+cat docroot/m.php
+<?php echo 2*$_GET["a"] . "\n"; ?>
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /m.php?a=3
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+mkdir -p test2
+rm -rf test2/*
+
+
+
+
+
+
+
+
+
+./client -p 9999 -d test2 http://localhost/m.php?a=3
+echo $?
+0
+cat test2/m.php
+6
+-----------------------------
+
+
+#############################
+A-Testcase 12: save-to-file-4
+
+-----------------------------
+
+
+mkdir -p docroot; rm docroot/*
+echo "<?php print_r(\$_GET); ?>" > docroot/index.php
+cat docroot/index.php
+<?php print_r($_GET); ?>
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /?welcome=here
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+mkdir -p test3
+rm -rf test3/*
+
+
+
+
+
+
+./client -p 9999 -d test3 http://localhost?welcome=here
+echo $?
+0
+cat test3/index.html
+Array
+(
+    [welcome] => here
+)
+-----------------------------
+
+
+#############################
+A-Testcase 13: invalid-protocol
+
+-----------------------------
+./client -p 9999 foo://localhost > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 14: invalid-hostname-1
+
+-----------------------------
+./client -p 9999 http:// > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 15: invalid-hostname-2
+
+-----------------------------
+./client -p 9999 http://?getparam > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 16: protocol-1
+
+-----------------------------
+nc -l -p 9999 -c "echo -e \"HTTP/1.1 200 OK\r\n\r\nNetcat.\""
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/
+Netcat.
+echo $?
+0
+-----------------------------
+
+
+#############################
+A-Testcase 17: protocol-2
+
+-----------------------------
+nc -l 9999 --crlf
+GET / HTTP/1.1
+Host: localhost
+Connection: close
+
+test
+
+^D
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/ > /dev/null
+Protocol error!
+echo $?
+2
+-----------------------------
+
+
+#############################
+A-Testcase 18: protocol-3
+
+-----------------------------
+nc -l 9999 --crlf
+GET / HTTP/1.1
+Host: localhost
+Connection: close
+
+HTTP/1.1
+
+^D
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/ > /dev/null
+Protocol error!
+echo $?
+2
+-----------------------------
+
+
+#############################
+A-Testcase 19: protocol-4
+
+-----------------------------
+nc -l 9999 --crlf
+GET / HTTP/1.1
+Host: localhost
+Connection: close
+
+HTTP/1.1 foobar
+
+^D
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/ > /dev/null
+Protocol error!
+echo $?
+2
+-----------------------------
+
+
+#############################
+A-Testcase 20: protocol-5
+
+-----------------------------
+nc -l 9999 --crlf
+GET / HTTP/1.1
+Host: localhost
+Connection: close
+
+HTTP/1.1 200 OK
+
+Hello.
+^D
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/
+Hello.
+echo $?
+0
+-----------------------------
+
+
+#############################
+A-Testcase 21: no-server
+
+-----------------------------
+
+-----------------------------
+
+
+-----------------------------
+./client -p 9999 http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 22: status-code-1
+
+-----------------------------
+mkdir -p docroot; rm docroot/*
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [404]: /hello.html - No such file or directory
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+./client -p 9999 http://localhost/hello.html > /dev/null
+404 Not Found
+echo $?
+3
+-----------------------------
+
+
+#############################
+A-Testcase 23: status-code-2
+
+-----------------------------
+nc -l -p 9999 -c "echo -e \"HTTP/1.1 418 Tea cold\r\n\r\nNetcat.\""
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/ > /dev/null
+418 Tea cold
+echo $?
+3
+-----------------------------
+
+
+#############################
+A-Testcase 24: simple-2
+
+-----------------------------
+mkdir -p docroot
+echo "Hello user." > docroot/hello.html
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /hello.html
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+./client -p 9999 http://127.0.0.1/hello.html
+Hello user.
+echo $?
+0
+-----------------------------
+
+
+#############################
+A-Testcase 25: lines-1
+
+-----------------------------
+mkdir -p docroot
+( for i in `seq 1 10`; do echo "ABC$i" | sha1sum | cut -d " " -f1 | tr -d \\n; printf -- "-%.0s" {1..8000}; echo "__end$i."; done; ) > docroot/longlines.html
+sha1sum docroot/longlines.html
+c1d5737e1fdb7fab94c30a3ab0fe44aa775c2bb3  longlines.html
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /longlines.html
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+
+
+./client -p 9999 -o lines1.html http://127.0.0.1/longlines.html
+echo $?
+0
+sha1sum lines1.html
+c1d5737e1fdb7fab94c30a3ab0fe44aa775c2bb3  lines1.html
+-----------------------------
+
+
+#############################
+A-Testcase 26: lines-2
+
+-----------------------------
+mkdir -p docroot
+echo -n "01234567890abcdefghijklmnopqr" > chars
+echo -n "stuvwxyz01234567890abcdefghij" >> chars
+echo -n "klmnopqrstuvwxyz.,:-!=?% ABCD" >> chars
+echo -n "EFGHIJKLMNOPQRSTUVWXYZABCDEFG" >> chars
+echo -n "HIJKLMNOPQRSTUVWXYZ" >> chars
+( for i in `cat chars | sed "s/./\0\n/g"`; do echo $i | sha1sum | tr -d "\n"; echo -n "x"; cat chars | sed "s/./\0$i/g"; echo ""; done; ) > docroot/mixed.html
+sha1sum docroot/mixed.html
+966debac96d8b1b40715666c93328bd08e6ecc5d  mixed.html
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /mixed.html
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+./client -p 9999 -o lines2.html http://127.0.0.1/mixed.html
+echo $?
+0
+sha1sum lines2.html
+966debac96d8b1b40715666c93328bd08e6ecc5d  lines2.html
+-----------------------------
+
+
+#############################
+A-Testcase 27: protocol-5
+
+-----------------------------
+nc -l -p 9999 -c "echo \"0iZRefnSwfL62th125FKNVvlKuY=\" | base64 -d"
+-----------------------------
+
+
+-----------------------------
+
+./client -p 9999 http://localhost/
+Protocol error!
+echo $?
+2
+-----------------------------
+
+
+#############################
+A-Testcase 28: invalid-port-3
+
+-----------------------------
+./client -p -2 http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 29: invalid-port-4
+
+-----------------------------
+./client -p 65599 http://localhost/ > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 01: usage
+
+-----------------------------
+./server
+<usage message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 02: invalid-port-1
+
+-----------------------------
+./server -p abc . > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 03: invalid-port-2
+
+-----------------------------
+./server -p 80z . > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 04: invalid-options-1
+
+-----------------------------
+./server -p 80 -p 81 . > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 05: invalid-options-2
+
+-----------------------------
+./server -a . > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 06: simple-1
+
+-----------------------------
+mkdir -p docroot
+echo "Hello world." > docroot/hello.html
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+wget http://localhost:9999/hello.html -O - 2>/dev/null
+Hello world.
+echo $?
+0
+-----------------------------
+
+
+#############################
+B-Testcase 07: simple-2
+
+-----------------------------
+mkdir -p docroot
+echo "Index." > docroot/index.html
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+wget http://localhost:9999 -O - 2>/dev/null
+Index.
+echo $?
+0
+-----------------------------
+
+
+#############################
+B-Testcase 08: simple-3
+
+-----------------------------
+mkdir -p docroot
+echo "Main." > docroot/main.file
+./server -p 9999 -i main.file docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+wget http://localhost:9999 -O - 2>/dev/null
+Main.
+echo $?
+0
+-----------------------------
+
+
+#############################
+B-Testcase 09: protocol-1
+
+-----------------------------
+mkdir -p docroot
+echo "12345" > docroot/123
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+echo -ne "GET /123 HTTP/1.1\r\n\r\n" | nc localhost 9999
+HTTP/1.1 200 OK
+Date: Thu, 1 Dec 20 12:00:00
+Content-Length: 6
+Connection: close
+
+12345
+-----------------------------
+
+
+#############################
+B-Testcase 10: not-found-1
+
+-----------------------------
+mkdir -p docroot; rm docroot/*
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo -ne "GET /file HTTP/1.1\r\n\r\n" | nc localhost 9999
+HTTP/1.1 404 (Not Found)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 11: not-found-2
+
+-----------------------------
+mkdir -p docroot; rm docroot/*
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+wget http://localhost:9999/test
+...
+HTTP request sent, awaiting response... 404 (Not Found)
+...
+echo $?
+8
+-----------------------------
+
+
+#############################
+B-Testcase 12: invalid-protocol-1
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo -ne "TRACE /file HTTP/1.1\r\n\r\n" | nc localhost 9999
+HTTP/1.1 501 (Not Implemented)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 13: invalid-protocol-2
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+wget http://localhost:9999/test --post-data=test
+...
+HTTP request sent, awaiting response... 501 (Not Implemented)
+...
+echo $?
+8
+-----------------------------
+
+
+#############################
+B-Testcase 14: invalid-protocol-3
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo -ne "test\r\n\r\n" | nc localhost 9999
+HTTP/1.1 400 (Bad Request)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 15: invalid-protocol-4
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo -ne "GET path HTTP/9.9\r\n\r\n" | nc localhost 9999
+HTTP/1.1 400 (Bad Request)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 16: invalid-protocol-5
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo -ne "a b c d e f\r\n\r\n" | nc localhost 9999
+HTTP/1.1 400 (Bad Request)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 17: invalid-protocol-6
+
+-----------------------------
+mkdir -p docroot
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+echo "BkMqIN91b9DZhr5b50bfmYkfUwA=" | base64 -d | nc localhost 9999
+HTTP/1.1 400 (Bad Request)
+Connection: close
+
+-----------------------------
+
+
+#############################
+B-Testcase 18: multi-1
+
+-----------------------------
+mkdir -p docroot
+echo "Hello world." > docroot/hello.html
+./server -p 9999 docroot
+
+
+
+
+
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+wget http://localhost:9999/hello.html -O - 2>/dev/null
+Hello world.
+wget http://localhost:9999/hello.html -O - 2>/dev/null
+Hello world.
+wget http://localhost:9999/hello.html -O - 2>/dev/null
+Hello world.
+-----------------------------
+
+
+#############################
+B-Testcase 19: signal-1
+
+-----------------------------
+mkdir -p docroot
+echo "12345" > docroot/123
+./server -p 9999 docroot
+
+^C
+
+
+
+
+
+
+
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+nc localhost 9999 --crlf
+GET /123 HTTP/1.1
+
+HTTP/1.1 200 OK
+Date: Thu, 1 Dec 20 12:00:00
+Content-Length: 6
+Connection: close
+
+12345
+-----------------------------
+
+
+#############################
+B-Testcase 20: lines-1
+
+-----------------------------
+mkdir -p docroot
+( for i in `seq 1 10`; do echo "ABC$i" | sha1sum | cut -d " " -f1 | tr -d \\n; printf -- "-%.0s" {1..8000}; echo "__end$i."; done; ) > docroot/longlines.html
+sha1sum docroot/longlines.html
+c1d5737e1fdb7fab94c30a3ab0fe44aa775c2bb3  longlines.html
+./server -p 9999 docroot
+
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+
+wget http://localhost:9999/longlines.html -O lines1 2>/dev/null
+echo $?
+0
+sha1sum lines1
+c1d5737e1fdb7fab94c30a3ab0fe44aa775c2bb3  lines1
+-----------------------------
+
+
+#############################
+B-Testcase 21: lines-2
+
+-----------------------------
+mkdir -p docroot
+echo -n "01234567890abcdefghijklmnopqr" > chars
+echo -n "stuvwxyz01234567890abcdefghij" >> chars
+echo -n "klmnopqrstuvwxyz.,:-!=?% ABCD" >> chars
+echo -n "EFGHIJKLMNOPQRSTUVWXYZABCDEFG" >> chars
+echo -n "HIJKLMNOPQRSTUVWXYZ" >> chars
+( for i in `cat chars | sed "s/./\0\n/g"`; do echo $i | sha1sum | tr -d "\n"; echo -n "x"; cat chars | sed "s/./\0$i/g"; echo ""; done; ) > docroot/mixed.html
+sha1sum docroot/mixed.html
+966debac96d8b1b40715666c93328bd08e6ecc5d  mixed.html
+./server -p 9999 docroot
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+wget http://localhost:9999/mixed.html -O lines2 2>/dev/null
+sha1sum lines2
+966debac96d8b1b40715666c93328bd08e6ecc5d  lines2
+-----------------------------
+
+
+#############################
+B-Testcase 22: invalid-port-3
+
+-----------------------------
+./server -p -2 docroot > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+B-Testcase 23: invalid-port-4
+
+-----------------------------
+./server -p 65599 docroot > /dev/null
+<error message>
+echo $?
+1
+-----------------------------
+
+
+#############################
+A-Testcase 51: binary-1
+
+-----------------------------
+mkdir -p docroot
+rm docroot/bin; for i in {0..255}; do printf "0x%02X\n" $i | xxd -r >> docroot/bin; done;
+sha1sum docroot/bin
+4916d6bdb7f78e6803698cab32d1586ea457dfc8  docroot/bin
+php -S 0.0.0.0:9999 -t docroot
+PHP 5.4.16 Development Server started at ...
+Listening on http://0.0.0.0:9999
+Document root is /home/user/docroot
+Press Ctrl-C to quit.
+[...] ::1:45974 [200]: /bin
+
+
+^C
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+
+
+
+./client -p 9999 -o binout http://localhost/bin
+echo $?
+0
+sha1sum binout
+4916d6bdb7f78e6803698cab32d1586ea457dfc8  binout
+-----------------------------
+
+
+#############################
+B-Testcase 51: binary-1
+
+-----------------------------
+mkdir -p docroot
+rm docroot/bin; for i in {0..255}; do printf "0x%02X\n" $i | xxd -r >> docroot/bin; done;
+sha1sum docroot/bin
+4916d6bdb7f78e6803698cab32d1586ea457dfc8  docroot/bin
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+wget http://localhost:9999/bin -O bincl
+sha1sum bincl
+4916d6bdb7f78e6803698cab32d1586ea457dfc8  bincl
+-----------------------------
+
+
+#############################
+B-Testcase 52: content-type-1
+
+-----------------------------
+mkdir -p docroot
+echo "content of index.html." > docroot/index.html
+echo "content of test.htm." > docroot/test.htm
+echo "content of style.css." > docroot/style.css
+echo "content of lib.js." > docroot/lib.js
+echo "content of other.file." > docroot/other.file
+./server -p 9999 docroot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+
+wget http://localhost:9999/ -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 23
+  Connection: close
+  Content-Type: text/html
+content of index.html.
+wget http://localhost:9999/index.html -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 23
+  Connection: close
+  Content-Type: text/html
+content of index.html.
+wget http://localhost:9999/test.htm -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 21
+  Connection: close
+  Content-Type: text/html
+content of test.htm.
+wget http://localhost:9999/style.css -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 22
+  Connection: close
+  Content-Type: text/css
+content of style.css.
+wget http://localhost:9999/lib.js -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 19
+  Connection: close
+  Content-Type: application/javascript
+content of lib.js.
+wget http://localhost:9999/other.file -q -S -O -
+  HTTP/1.1 200 OK
+  Date: Thu, 1 Dec 20 12:00:00
+  Content-Length: 23
+  Connection: close
+content of other.file.
+-----------------------------
+
+
+#############################
+B-Testcase: response-detail-1
+
+-----------------------------
+mkdir -p docroot
+echo "Index." > docroot/index.html
+./server -p 9999 docroot
+
+
+
+^C
+echo $?
+0
+-----------------------------
+
+
+-----------------------------
+
+
+
+echo -e "GET / HTTP/1.1\n" | nc localhost 9999 | grep "HTTP/1.1" | xxd -c 10
+0000000: 4854 5450 2f31 2e31 2032  HTTP/1.1 2
+000000a: 3030 204f 4b0d 0a         00 OK..
+-----------------------------
+
