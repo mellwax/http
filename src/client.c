@@ -71,7 +71,7 @@ static void parse_args(int argc, char **argv, int *port, char **url_path, char *
             case 'p': {
                 char *endptr;
                 long l = strtol(optarg, &endptr, 10);
-                if (endptr[0] != '\0') {
+                if (*endptr != '\0') {
                     free_strings(*url_path, *host);
                     USAGE("port has to be a number");
                 }
@@ -109,11 +109,11 @@ static void parse_args(int argc, char **argv, int *port, char **url_path, char *
     }
     if (p_count > 1 || o_count > 1 || d_count > 1) {
         free_strings(*url_path, *host);
-        USAGE("options cannot be called multiple times");
+        USAGE("options cannot be set multiple times");
     }
     if (o_count + d_count > 1) {
         free_strings(*url_path, *host);
-        USAGE("option o and d cannot be both set");
+        USAGE("options o and d cannot be both set");
     }
     if (argc - (optind - 1) < 2) {
         free_strings(*url_path, *host);
@@ -155,8 +155,11 @@ static void parse_args(int argc, char **argv, int *port, char **url_path, char *
     if (ptr == NULL) {
         ptr = "/";
     }
-
-    strcpy(*url_path, ptr);
+    if (*ptr != '/') {
+        sprintf(*url_path, "/%s", ptr);
+    } else {
+        strcpy(*url_path, ptr);
+    }
 
     if (d_count == 1) {
         char *ptr2 = strrchr(url_tmp2, '/');
@@ -187,7 +190,7 @@ static void parse_args(int argc, char **argv, int *port, char **url_path, char *
  */
 static int send_get_request(char *url_path, char *host, FILE *sockfile) {
     char get_request[512];
-    sprintf(get_request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n", url_path, host);
+    snprintf(get_request, sizeof(get_request), "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n", url_path, host);
 
     fputs(get_request, sockfile);
     return fflush(sockfile);
@@ -205,6 +208,7 @@ static int send_get_request(char *url_path, char *host, FILE *sockfile) {
  */
 static void close_free_resources(struct addrinfo *ai, FILE *output, FILE *sockfile, char *url_path,
         char *host, char *response) {
+
     freeaddrinfo(ai);
     free_strings(url_path, host);
     free(response);
@@ -256,7 +260,7 @@ int main(int argc, char **argv) {
     hints.ai_socktype = SOCK_STREAM;
 
     char port_str[10];
-    sprintf(port_str, "%d", port);
+    snprintf(port_str, sizeof(port_str), "%d", port);
     int res = getaddrinfo(host, port_str, &hints, &ai);
 
     if (res != 0) {
@@ -285,7 +289,9 @@ int main(int argc, char **argv) {
     if (sockfile == NULL) {
         free_strings(url_path, host);
         freeaddrinfo(ai);
-
+        if (close(sockfd) == -1) {
+            ERROR_EXIT("error closing socket");
+        }
         ERROR_EXIT("error connecting to socket");
     }
 

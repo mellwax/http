@@ -10,7 +10,7 @@ TARS   = 3-http_server-todorovic.tar.gz
 
 .PHONY: all clean
 
-all: client #server
+all: server #client
 
 client: client.o
 	$(CC) -o client client.o
