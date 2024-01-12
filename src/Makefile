@@ -10,7 +10,7 @@ TARS   = 3-http_server-todorovic.tar.gz
 
 .PHONY: all clean
 
-all: server #client
+all: server client
 
 client: client.o
 	$(CC) -o client client.o
@@ -31,4 +31,4 @@ packc:
 	tar -cvzf $(TARC) client.c Makefile
 
 packs:
-	tar -cvzf $(TARS) client.c Makefile
+	tar -cvzf $(TARS) server.c Makefile

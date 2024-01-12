@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define URL_DELIMS ";/?:@=&"
 
@@ -50,16 +51,22 @@ static void free_strings(char *url_path, char *host) {
 }
 
 /**
- * @brief
+ * @brief parses the arguments passed to this program.
  *
  * @details
+ *      [-p PORT] specifies the port, on which the client socket shall connect to. The port must not be negative.
  *
- * @param argc
- * @param argv
- * @param port
- * @param url_path
- * @param host
- * @param output
+ *      [-o FILE | -d DIR] specifies, where to write the output of this program.
+ *          -o specifies a filename, which shall be written to
+ *          -d specifies a directory, in which a file with the same name, as the requested file, shall be saved to
+ *          if these options are omitted the output is written to stdout.
+ *
+ * @param argc argument count
+ * @param argv argument values
+ * @param port port number to be set
+ * @param url_path requested url path to be set
+ * @param host host name to be set
+ * @param output output file to be set
  */
 static void parse_args(int argc, char **argv, int *port, char **url_path, char **host, FILE **output) {
     int c;
@@ -181,12 +188,14 @@ static void parse_args(int argc, char **argv, int *port, char **url_path, char *
 }
 
 /**
- * @brief
+ * @brief This function sends a HTTP GET request to the opened socket file.
  *
- * @param url_path
- * @param host
- * @param sockfile
- * @return 0 if flushing to sockfile was successful
+ * @param url_path the requested file path
+ * @param host the host name
+ * @param sockfile the socketfile, to which the request is sent
+ *
+ * @return  0, if flushing to sockfile was successful
+ *          EOF, otherwise
  */
 static int send_get_request(char *url_path, char *host, FILE *sockfile) {
     char get_request[512];
@@ -197,14 +206,14 @@ static int send_get_request(char *url_path, char *host, FILE *sockfile) {
 }
 
 /**
- * @brief
+ * @brief this function closes or frees all resources, which this program has used.
  *
- * @param ai
- * @param output
- * @param sockfile
- * @param url_path
- * @param host
- * @param response
+ * @param ai the addrinfo struct
+ * @param output the output file
+ * @param sockfile the socket file
+ * @param url_path the requested file path string
+ * @param host the host name string
+ * @param response the response string
  */
 static void close_free_resources(struct addrinfo *ai, FILE *output, FILE *sockfile, char *url_path,
         char *host, char *response) {
@@ -214,6 +223,11 @@ static void close_free_resources(struct addrinfo *ai, FILE *output, FILE *sockfi
     free(response);
 
     if (fclose(sockfile) != 0) {
+        if (output != stdout) {
+            if (fclose(output) != 0) {
+                ERROR_EXIT("error closing output file");
+            }
+        }
         ERROR_EXIT("error closing socket file");
     }
     if (output != stdout) {
@@ -224,16 +238,24 @@ static void close_free_resources(struct addrinfo *ai, FILE *output, FILE *sockfi
 }
 
 /**
+ * @brief The main function of this program, containing the functionality (sending a request for a file to a server,
+ * and then writing the response, if successful to the specified option or stdout, and if unsuccessful to stderr).
  *
- * @param argc
- * @param argv
+ * @details The arguments passed to this program are first parsed, then a socket to the specified host and port number
+ * is opened. If successful, the request for the desired file is sent to the host and the response is written to either
+ * the specified output file (-o or -d), or stdout, if the host returns a status code other than 200 OK, the response is
+ * written to stderr.
+ *
+ * @param argc argument count
+ * @param argv argument values
+ *
  * @return  EXIT_SUCCESS, if no errors occurred during execution
- *          <p>
+ *
  *          2, if the HTTP response header is invalid
- *          <p>
+ *
  *          3, if the HTTP response status code is not 200
- *          <p>
- *          EXIT_FAILURE, if any other error occurred during execution
+ *
+ *          EXIT_FAILURE, otherwise
  */
 int main(int argc, char **argv) {
     program_name = argv[0];

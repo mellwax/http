@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 
 #define HTTP_version "HTTP/1.1"
@@ -21,20 +22,52 @@
 static const char *program_name;
 volatile sig_atomic_t quit = 0;
 
+/**
+ * @brief signal handler to receive a SIGINT or SIGTERM signal
+ *
+ * @param signal signal to handle
+ */
 static void handle_signal(int signal) {
     quit = 1;
 }
 
+/**
+ * @brief prints the error message to stderr and terminates the program with EXIT_FAILURE
+ *
+ * @param message error message to be printed
+ */
 static void ERROR_EXIT(char *message) {
     fprintf(stderr, "[%s]: %s\n", program_name, message);
     exit(EXIT_FAILURE);
 }
 
+/**
+ * @brief prints a usage message to stderr and terminates the program with EXIT_FAILURE
+ *
+ * @param message detailed message describing wrong usage
+ */
 static void USAGE(const char *message) {
     fprintf(stderr, "[%s]: %s\nUSAGE: %s [-p PORT] [-i INDEX] DOC_ROOT\n", program_name, message, program_name);
     exit(EXIT_FAILURE);
 }
 
+/**
+ * @brief parses the arguments passed to this program.
+ *
+ * @details
+ *      [-p PORT] specifies the port, on which the server socket shall be opened.
+ *
+ *      [-i INDEX] specifies the index file name, if a client requests a directory.
+ *
+ *      DOC_ROOT specifies the path of the document root directory, which contains the files that can be requested from
+ *      the server.
+ *
+ * @param argc argument count
+ * @param argv argument values
+ * @param port port number to be set
+ * @param index index file name to be set
+ * @param doc_root the document root directory to be set
+ */
 static void parse_args(int argc, char **argv, int *port, char **index, char **doc_root) {
     int c;
     int p_count = 0, i_count = 0;
@@ -75,6 +108,13 @@ static void parse_args(int argc, char **argv, int *port, char **index, char **do
     *doc_root = argv[optind];
 }
 
+/**
+ * @brief This function retrieves the file size of a file in bytes and returns it.
+ * If the file does not exist -1 is returned.
+ *
+ * @param file file, of which the file size shall be returned
+ * @return the file size, of file, in bytes.
+ */
 static off_t get_file_size(FILE *file) {
     struct stat st;
 
@@ -85,14 +125,30 @@ static off_t get_file_size(FILE *file) {
     return st.st_size;
 }
 
+/**
+ * @brief Writes an HTTP error message response to the specified stream and flushes it.
+ *
+ * @param connection the stream to which to write
+ * @param response_status the HTTP status code
+ * @param response_status_msg the HTTP status code message
+ */
 static void send_invalid_response(FILE *connection, int response_status, char *response_status_msg) {
     char response[1024];
     snprintf(response, sizeof(response), "HTTP/1.1 %d %s\r\nConnection: close\r\n\r\n", response_status,
              response_status_msg);
+
     fputs(response, connection);
+
     fflush(connection);
 }
 
+/**
+ * @brief Writes a successful message/response (header and file content) to the connection stream.
+ * After completing writing, the stream/FILE is flushed.
+ *
+ * @param connection stream to write to
+ * @param requested_file file stream which is read and sent
+ */
 static void send_response(FILE *connection, FILE *requested_file) {
     char header[512];
     char date_time[128];
@@ -112,11 +168,25 @@ static void send_response(FILE *connection, FILE *requested_file) {
     while (fgets(buffer, sizeof(buffer), requested_file) != NULL) {
         fputs(buffer, connection);
     }
-    fputs("\n", connection);
 
     fflush(connection);
 }
 
+/**
+ *  @brief The main function, containing the functionality (receiving HTTP requests and sending a
+ *  corresponding response, until interrupted) of this server program.
+ *
+ *  @details This main function parses the arguments, then sets up a signal handler for SIGINT and SIGTERM, then sets
+ *  up the socket, to which clients may be allowed to connect to and send their requests. Once a connection is
+ *  accepted the server receives their request and checks its correctness, and then sends either a HTTP error code or,
+ *  if successful: 200 OK, along with the requested file.
+ *
+ * @param argc argument count
+ * @param argv argument values
+ *
+ * @return  EXIT_SUCCESS, if no errors occurred during execution
+ *          EXIT_FAILURE, if an error occurred
+ */
 int main(int argc, char **argv) {
     program_name = argv[0];
     int port = 8080;
@@ -172,7 +242,6 @@ int main(int argc, char **argv) {
     freeaddrinfo(ai);
 
     while (!quit) {
-        fprintf(stdout, "waiting for connection\n");
         int connfd = accept(sockfd, NULL, NULL);
         if (connfd < 0) {
             if (close(sockfd) != 0) {
@@ -184,7 +253,6 @@ int main(int argc, char **argv) {
             ERROR_EXIT("error accepting new connection");
         }
 
-
         FILE *connection = fdopen(connfd, "r+");
         if (connection == NULL) {
             if (close(sockfd) != 0) {
@@ -195,21 +263,26 @@ int main(int argc, char **argv) {
 
         char buffer[1024];
 
-        fgets(buffer, sizeof(buffer), connection);
-        fprintf(stderr, "buffer:\n%s\n", buffer);
+        while (fgets(buffer, sizeof(buffer), connection) == NULL) {}
 
         char *buffer_cpy = malloc(sizeof(buffer));
+        char *buffer_cpy_ptr = buffer_cpy;
         if (buffer_cpy == NULL) {
             send_invalid_response(connection, 507, "(Insufficient Storage)");
             goto connection_closing;
         }
-        char *buffer_cpy_ptr = buffer_cpy;
 
         strcpy(buffer_cpy, buffer);
 
         char *method = strsep(&buffer_cpy, " ");
         char *requested_path = strsep(&buffer_cpy, " ");
         char *protocol = buffer_cpy;
+
+        while (fgets(buffer, sizeof(buffer), connection) != NULL) {
+            if (strcmp(buffer, "\r\n") == 0) {
+                break;
+            }
+        }
 
         if (protocol == NULL || strncmp(protocol, HTTP_version, sizeof(HTTP_version) - 1) != 0) {
             send_invalid_response(connection, 400, "(Bad Request)");
@@ -236,15 +309,12 @@ int main(int argc, char **argv) {
         }
 
         connection_closing:
-        fprintf(stderr, "method: %s\n", method);
-        fprintf(stderr, "path: %s\n", requested_path);
-        fprintf(stderr, "protocol: %s\n", protocol);
 
         free(buffer_cpy_ptr);
 
         if (requested_file != NULL) {
             if (fclose(requested_file) != 0) {
-                if (fclose(connection) != 0) {
+                if (close(connfd) != 0) {
                     if (close(sockfd) != 0) {
                         ERROR_EXIT("error closing socket file descriptor");
                     }
@@ -254,8 +324,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        fprintf(stdout, "closing connection\n");
-        if (fclose(connection) != 0) {
+        if (close(connfd) != 0) {
             if (close(sockfd) != 0) {
                 ERROR_EXIT("error closing socket file descriptor");
             }
